@@ -27,5 +27,7 @@ class WDict(commands.Cog):
                     index += 1
                     page += f"{index}. {sense}{nl}"
                 page += nl
+        if not page:
+            page = 'No definitions found'
         await ctx.send(page)
 
