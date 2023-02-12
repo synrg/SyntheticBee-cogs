@@ -17,7 +17,6 @@ class WDict(commands.Cog):
         page = ""
         nl = "\n"
         for entry in words:
-            # TODO: sanitize!
             for definition in entry["definitions"]:
                 t = definition["text"]
                 p = definition["partOfSpeech"]
