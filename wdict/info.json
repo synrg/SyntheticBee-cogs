@@ -1,0 +1,14 @@
+{
+  "author" : ["SyntheticBee"],
+  "install_msg": "Currently this cog is a work-in-progress so no user support is provided.",
+  "name" : "wdict",
+  "short" : "Look up word definitions from Wiktionary",
+  "description" : "The [p]wdict command looks up words in the dictionary from wiktionary.org",
+  "end_user_data_statement": "This cog does not store any user data.",
+  "requirements" : [
+    "wiktionaryparser>=0.0.97,<0.1.0"
+  ],
+  "tags": ["words", "dictionary"],
+  "hidden": false,
+  "min_bot_version": "3.4.18"
+}

@@ -1,3 +1,11 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: SyntheticBee-cogs
+Source: https://github.com/synrg/SyntheticBee-cogs
+
+Files: *
+Copyright: 2023 Ben Armstrong
+License: AGPL-3+
+
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
