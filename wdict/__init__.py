@@ -13,4 +13,3 @@ async def setup(bot: Red) -> None:
     r = bot.add_cog(cog)
     if r is not None:
         await r
-
