@@ -1,6 +1,4 @@
 """Dictionary cog for Red-DiscordBot based on Wiktionary."""
-import re
-
 from redbot.core import commands
 from wiktionaryparser import WiktionaryParser
 
