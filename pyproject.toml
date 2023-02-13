@@ -13,7 +13,7 @@ license = "AGPL"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.10"
 wiktionaryparser = "^0.0.97"
 Red-DiscordBot = "^3.4.18"
 
