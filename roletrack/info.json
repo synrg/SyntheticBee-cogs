@@ -1,0 +1,16 @@
+{
+  "author" : ["SyntheticBee"],
+  "name" : "roletrack",
+  "short": "Track and continuously report the number of members holding roles.",
+  "description" : "Track when the number of members holding selected roles changes, continuously updating a message summarizing the changes.",
+  "install_msg": "Currently this cog is a work-in-progress so no user support is provided. Use `[p]roletrack` group commands to manage tracked role messages.",
+  "end_user_data_statement": "This cog does not store any user data.",
+  "tags": ["team", "role", "member", "count", "update"],
+  "hidden": false,
+  "min_bot_version": "3.5.0",
+  "min_python_version": [
+    3,
+    11,
+    0
+  ]
+}
