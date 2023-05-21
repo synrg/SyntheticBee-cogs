@@ -1,4 +1,4 @@
-"""Dictionary cog for Red-DiscordBot based on Wiktionary."""
+"""Cog for Red-DiscordBot to track how many members hold particular roles."""
 import asyncio
 import logging
 
