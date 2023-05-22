@@ -1,4 +1,4 @@
-"""Cog for Red-DiscordBot to track how many members hold particular roles."""
+"""Cog for Red-DiscordBot to track how many members hold particular roles"""
 import asyncio
 import logging
 from typing import Optional
@@ -12,14 +12,35 @@ log = logging.getLogger("red.syntheticbee-cogs.RoleTrack")
 log.setLevel(logging.DEBUG)
 
 
+def get_tracker_message_id_parts(tracker: dict):
+    message_id_str = tracker.get("message", "-")
+    return (int(part) for part in message_id_str.split("-"))
+
+
+async def get_tracker_message(
+    cog: commands.Cog,
+    guild: discord.Guild,
+    tracker: dict,
+):
+    (channel_id, message_id) = get_tracker_message_id_parts(tracker)
+    message = next(
+        (msg for msg in cog.bot.cached_messages if msg.id == int(message_id)),
+        None,
+    )
+    if not message:
+        if message_id not in cog.stale_tracking_messages:
+            channel = guild.get_channel(channel_id)
+            message = await channel.fetch_message(message_id)
+    return message
+
+
 def make_embed(
     guild: discord.Guild,
     tracked_role_ids: list[int],
     title: Optional[str],
 ):
     _title = title or "Members per role"
-    # Tracked roles are either the changed roles from the member update,
-    # or the role retrieved from the guild, or just the role id if not found.
+    # Roles or just the id if not found:
     roles_in_embed = [
         guild.get_role(tracked_role_id) or tracked_role_id
         for tracked_role_id in tracked_role_ids
@@ -35,7 +56,7 @@ def make_embed(
 
 
 class RoleTrack(commands.Cog):
-    """Track changes to selected roles."""
+    """Track changes to selected roles"""
 
     __author__ = "SyntheticBee"
 
@@ -88,19 +109,10 @@ class RoleTrack(commands.Cog):
             if set(tracker.get("roles")).intersection(changed_tracked_role_ids)
         ]
         for tracker in trackers:
-            (channel_id, message_id) = (
-                int(part) for part in tracker.get("message", "-").split("-")
-            )
-            message = next(
-                (msg for msg in self.bot.cached_messages if msg.id == int(message_id)),
-                None,
-            )
             try:
+                message = await get_tracker_message(self, guild, tracker)
                 if not message:
-                    if message_id in self.stale_tracking_messages:
-                        continue
-                    channel = guild.get_channel(channel_id)
-                    message = await channel.fetch_message(message_id)
+                    continue
                 embed = make_embed(
                     guild,
                     tracked_role_ids=tracker.get("roles"),
@@ -115,6 +127,7 @@ class RoleTrack(commands.Cog):
             ) as err:
                 # Log & skip messages we can't fetch or edit
                 # - also mark them stale to avoid expensive repeat fetches
+                (_channel_id, message_id) = get_tracker_message_id_parts(tracker)
                 self.stale_tracking_messages.append(message_id)
                 log.error(
                     "Stopping %s updates until reload due to: %s",
@@ -126,10 +139,11 @@ class RoleTrack(commands.Cog):
     @commands.group()
     @commands.guild_only()
     async def roletrack(self, ctx: commands.Context) -> None:
-        """Commands to track number of members with roles."""
+        """Commands to track number of members with roles"""
 
-    @roletrack.command()
-    async def add(self, ctx: commands.Context, role: discord.Role):
+    @roletrack.command(name="add")
+    async def roletrack_add(self, ctx: commands.Context, role: discord.Role):
+        """Add a role to track"""
         guild_config = self.config.guild(ctx.guild)
         async with guild_config.tracked_roles() as tracked_roles:
             if role.id in tracked_roles:
@@ -146,8 +160,9 @@ class RoleTrack(commands.Cog):
                 )
             )
 
-    @roletrack.command()
-    async def remove(self, ctx: commands.Context, role: discord.Role):
+    @roletrack.command(name="remove")
+    async def roletrack_remove(self, ctx: commands.Context, role: discord.Role):
+        """Remove a tracked role"""
         guild_config = self.config.guild(ctx.guild)
         async with guild_config.tracked_roles() as tracked_roles:
             if role.id not in tracked_roles:
@@ -164,8 +179,9 @@ class RoleTrack(commands.Cog):
                 )
             )
 
-    @roletrack.command()
-    async def list(self, ctx: commands.Context):
+    @roletrack.command(name="list")
+    async def roletrack_list(self, ctx: commands.Context):
+        """List tracked roles"""
         guild_config = self.config.guild(ctx.guild)
         tracked_roles = await guild_config.tracked_roles()
         description = (
@@ -175,17 +191,17 @@ class RoleTrack(commands.Cog):
 
     @roletrack.group(name="message")
     async def roletrack_message(self, ctx: commands.Context) -> None:
-        """Commands to manage tracked role messages."""
+        """Commands to manage tracked role messages"""
 
-    @roletrack_message.command()
-    async def send(
+    @roletrack_message.command(name="send")
+    async def roletrack_message_send(
         self,
         ctx: commands.Context,
         channel: Optional[discord.TextChannel] = None,
         roles: commands.Greedy[discord.Role] = [],
         title: Optional[str] = None,
     ) -> None:
-        """Send a role tracker message and start tracking."""
+        """Send a role tracker message and start tracking"""
         _channel = channel or ctx.channel
         guild_config = self.config.guild(ctx.guild)
         tracked_role_ids = set(await guild_config.tracked_roles())
@@ -214,8 +230,7 @@ class RoleTrack(commands.Cog):
                 title=title,
             )
             message = await _channel.send(embed=embed)
-        except (discord.HTTPException, discord.Forbidden, ValueError, TypeError) as err:
-            error_msg = str(err)
+        except (discord.HTTPException, discord.Forbidden, ValueError, TypeError):
             message = None
         if message:
             async with self.config.guild(
@@ -233,3 +248,75 @@ class RoleTrack(commands.Cog):
             )
         else:
             await ctx.send(f"Role tracking message not created:\n{error_msg}")
+
+    @roletrack_message.command(name="purge")
+    async def roletrack_message_purge(
+        self,
+        ctx: commands.Context,
+    ) -> None:
+        """Purge all inaccessible role tracker messages from config."""
+        guild_config = self.config.guild(ctx.guild)
+        valid = []
+        invalid = []
+        for tracker in await guild_config.tracking_messages():
+            try:
+                message = await get_tracker_message(self, ctx.guild, tracker)
+                if message:
+                    valid.append(tracker)
+                else:
+                    raise ValueError(
+                        "Tracker message not in cache and not fetched into cache"
+                    )
+            except (discord.HTTPException, discord.Forbidden, ValueError):
+                invalid.append(tracker)
+        if not valid and not invalid:
+            await ctx.send("No role trackers defined")
+            return
+        if invalid:
+            await ctx.send(
+                "Purging these no longer accessible role trackers from config:\n"
+                + "\n".join(repr(tracker) for tracker in invalid)
+            )
+            async with guild_config.tracking_messages() as tracking_messages:
+                for invalid_tracker in invalid:
+                    tracking_messages.remove(invalid_tracker)
+        if valid:
+            await ctx.send(
+                "Valid role trackers remaining:\n"
+                + "\n".join(repr(tracker) for tracker in valid)
+            )
+
+    @roletrack_message.command(name="list")
+    async def roletrack_message_list(
+        self,
+        ctx: commands.Context,
+    ) -> None:
+        """List role tracking message config stanzas."""
+        guild_config = self.config.guild(ctx.guild)
+        valid = []
+        invalid = []
+        for tracker in await guild_config.tracking_messages():
+            try:
+                message = await get_tracker_message(self, ctx.guild, tracker)
+                if message:
+                    valid.append(tracker)
+                else:
+                    raise ValueError(
+                        "Tracker message not in cache and not fetched into cache"
+                    )
+            except (discord.HTTPException, discord.Forbidden, ValueError) as err:
+                await ctx.send(str(err))
+                invalid.append(tracker)
+        if not valid and not invalid:
+            await ctx.send("No role trackers defined")
+            return
+        if invalid:
+            await ctx.send(
+                "Inaccessible role trackers:\n"
+                + "\n".join(repr(tracker) for tracker in invalid)
+                + "\n\nTo remove them from config, use: `[p]roletrack message purge`"
+            )
+        if valid:
+            await ctx.send(
+                "Valid role trackers:\n" + "\n".join(repr(tracker) for tracker in valid)
+            )
