@@ -138,7 +138,7 @@ class RoleTrack(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
-    @checks.admin_or_permission(manage_roles=True)
+    @checks.admin_or_permissions(manage_roles=True)
     async def roletrack(self, ctx: commands.Context) -> None:
         """Commands to track number of members with roles"""
 
