@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 
 import discord
-from redbot.core import Config, commands
+from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
 
 
@@ -138,6 +138,7 @@ class RoleTrack(commands.Cog):
 
     @commands.group()
     @commands.guild_only()
+    @checks.admin_or_permission(manage_roles=True)
     async def roletrack(self, ctx: commands.Context) -> None:
         """Commands to track number of members with roles"""
 
