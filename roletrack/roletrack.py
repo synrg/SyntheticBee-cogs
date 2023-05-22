@@ -141,8 +141,12 @@ class RoleTrack(commands.Cog):
     async def roletrack(self, ctx: commands.Context) -> None:
         """Commands to track number of members with roles"""
 
-    @roletrack.command(name="add")
-    async def roletrack_add(self, ctx: commands.Context, role: discord.Role):
+    @roletrack.group(name="role")
+    async def roletrack_role(self, ctx: commands.Context) -> None:
+        """Commands to manage tracked roles"""
+
+    @roletrack_role.command(name="add")
+    async def roletrack_role_add(self, ctx: commands.Context, role: discord.Role):
         """Add a role to track"""
         guild_config = self.config.guild(ctx.guild)
         async with guild_config.tracked_roles() as tracked_roles:
@@ -160,8 +164,8 @@ class RoleTrack(commands.Cog):
                 )
             )
 
-    @roletrack.command(name="remove")
-    async def roletrack_remove(self, ctx: commands.Context, role: discord.Role):
+    @roletrack_role.command(name="remove")
+    async def roletrack_role_remove(self, ctx: commands.Context, role: discord.Role):
         """Remove a tracked role"""
         guild_config = self.config.guild(ctx.guild)
         async with guild_config.tracked_roles() as tracked_roles:
@@ -179,8 +183,8 @@ class RoleTrack(commands.Cog):
                 )
             )
 
-    @roletrack.command(name="list")
-    async def roletrack_list(self, ctx: commands.Context):
+    @roletrack_role.command(name="list")
+    async def roletrack_role_list(self, ctx: commands.Context):
         """List tracked roles"""
         guild_config = self.config.guild(ctx.guild)
         tracked_roles = await guild_config.tracked_roles()
@@ -254,7 +258,7 @@ class RoleTrack(commands.Cog):
         self,
         ctx: commands.Context,
     ) -> None:
-        """Purge all inaccessible role tracker messages from config."""
+        """Purge inaccessible role tracker messages from config"""
         guild_config = self.config.guild(ctx.guild)
         valid = []
         invalid = []
@@ -291,7 +295,7 @@ class RoleTrack(commands.Cog):
         self,
         ctx: commands.Context,
     ) -> None:
-        """List role tracking message config stanzas."""
+        """List role tracking message config stanzas"""
         guild_config = self.config.guild(ctx.guild)
         valid = []
         invalid = []
