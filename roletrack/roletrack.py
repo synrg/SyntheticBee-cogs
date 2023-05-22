@@ -181,7 +181,7 @@ class RoleTrack(commands.Cog):
     async def send(
         self,
         ctx: commands.Context,
-        channel: Optional[discord.ChannelType] = None,
+        channel: Optional[discord.TextChannel] = None,
         roles: commands.Greedy[discord.Role] = [],
         title: Optional[str] = None,
     ) -> None:
