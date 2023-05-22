@@ -304,8 +304,7 @@ class RoleTrack(commands.Cog):
                     raise ValueError(
                         "Tracker message not in cache and not fetched into cache"
                     )
-            except (discord.HTTPException, discord.Forbidden, ValueError) as err:
-                await ctx.send(str(err))
+            except (discord.HTTPException, discord.Forbidden, ValueError):
                 invalid.append(tracker)
         if not valid and not invalid:
             await ctx.send("No role trackers defined")
